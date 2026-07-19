@@ -17,12 +17,14 @@
     <div id="root"></div>
 
     <script src="questions.js"></script>
+    <script src="grammar.js"></script>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
         const abbreviationsData = window.abbreviationsData || [];
         const theoryData = window.theoryData || [];
+        const grammarData = window.grammarData || [];
 
         function shuffleArray(array) {
             const shuffled = [...array];
@@ -33,35 +35,67 @@
             return shuffled;
         }
 
+        function normalizeText(text) {
+            if (!text) return "";
+            return text.toString().toLowerCase().trim().replace(/[‘’´`]/g, "'");
+        }
+
+        function isCorrect(input, answer) {
+            const normalizedInput = normalizeText(input);
+            if (Array.isArray(answer)) {
+                return answer.some(ans => normalizeText(ans) === normalizedInput);
+            }
+            return normalizeText(answer) === normalizedInput;
+        }
+
         const App = () => {
             const [viewMode, setViewMode] = useState('menu'); 
             const [activeCategory, setActiveCategory] = useState(null);
+            const [rawCategory, setRawCategory] = useState(null);
             const [quizQuestions, setQuizQuestions] = useState([]);
             const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
             const [score, setScore] = useState(0);
             const [showResults, setShowResults] = useState(false);
             const [selectedOption, setSelectedOption] = useState(null);
+            const [textInput, setTextInput] = useState("");
             const [isAnswered, setIsAnswered] = useState(false);
             const [shuffledOptions, setShuffledOptions] = useState([]);
             const [wrongAnswers, setWrongAnswers] = useState([]);
             const [databaseFilter, setDatabaseFilter] = useState('all');
+            const inputRef = useRef(null);
 
             const startQuiz = (category) => {
                 let questions = [];
+                let displayLabel = "";
+
                 if (category === 'abbreviations') {
                     questions = shuffleArray([...abbreviationsData]);
+                    displayLabel = "Abbreviations";
                 } else if (category === 'theory') {
                     questions = shuffleArray([...theoryData]);
+                    displayLabel = "Theory & Knowledge";
+                } else if (category === 'grammar') {
+                    questions = shuffleArray([...grammarData]);
+                    displayLabel = "Grammar";
                 } else if (category === 'random20') {
                     questions = shuffleArray([...abbreviationsData, ...theoryData]).slice(0, 20);
+                    displayLabel = "20 Random (MCQ)";
+                } else if (category === 'grammarRandom20') {
+                    questions = shuffleArray([...grammarData]).slice(0, 20);
+                    displayLabel = "20 Random Grammar";
+                } else if (category === 'ultimateRandom20') {
+                    questions = shuffleArray([...abbreviationsData, ...theoryData, ...grammarData]).slice(0, 20);
+                    displayLabel = "20 Mixed Random";
                 }
                 
                 setQuizQuestions(questions);
-                setActiveCategory(category);
+                setActiveCategory(displayLabel);
+                setRawCategory(category);
                 setCurrentQuestionIndex(0);
                 setScore(0);
                 setShowResults(false);
                 setSelectedOption(null);
+                setTextInput("");
                 setIsAnswered(false);
                 setWrongAnswers([]);
                 setViewMode('quiz');
@@ -69,11 +103,16 @@
 
             useEffect(() => {
                 if (viewMode === 'quiz' && currentQuestionIndex < quizQuestions.length) {
-                    setShuffledOptions(shuffleArray(quizQuestions[currentQuestionIndex].options));
+                    const currentQ = quizQuestions[currentQuestionIndex];
+                    if (currentQ.options) {
+                        setShuffledOptions(shuffleArray(currentQ.options));
+                    } else if (inputRef.current) {
+                        inputRef.current.focus();
+                    }
                 }
             }, [viewMode, currentQuestionIndex, quizQuestions]);
 
-            const handleOptionClick = (option) => {
+            const submitMultipleChoice = (option) => {
                 if (isAnswered) return;
                 setSelectedOption(option);
                 setIsAnswered(true);
@@ -90,11 +129,37 @@
                 }
             };
 
+            const submitTextInput = () => {
+                if (isAnswered || !textInput.trim()) return;
+                setIsAnswered(true);
+
+                const currentQ = quizQuestions[currentQuestionIndex];
+                if (isCorrect(textInput, currentQ.answer)) {
+                    setScore(score + 1);
+                } else {
+                    const correctDisplay = Array.isArray(currentQ.answer) ? currentQ.answer.join(" OR ") : currentQ.answer;
+                    setWrongAnswers([...wrongAnswers, {
+                        question: currentQ.q,
+                        selected: textInput,
+                        correct: correctDisplay
+                    }]);
+                }
+            };
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter' && textInput.trim() && !isAnswered) {
+                    submitTextInput();
+                } else if (e.key === 'Enter' && isAnswered) {
+                    nextQuestion();
+                }
+            };
+
             const nextQuestion = () => {
                 const next = currentQuestionIndex + 1;
                 if (next < quizQuestions.length) {
                     setCurrentQuestionIndex(next);
                     setSelectedOption(null);
+                    setTextInput("");
                     setIsAnswered(false);
                 } else {
                     setShowResults(true);
@@ -104,11 +169,13 @@
             const navigateToMenu = () => {
                 setViewMode('menu');
                 setActiveCategory(null);
+                setRawCategory(null);
                 setQuizQuestions([]);
                 setCurrentQuestionIndex(0);
                 setScore(0);
                 setShowResults(false);
                 setSelectedOption(null);
+                setTextInput("");
                 setIsAnswered(false);
                 setWrongAnswers([]);
             };
@@ -134,17 +201,40 @@
                                     Theory & General Knowledge ({theoryData.length} questions)
                                 </button>
                                 <button 
+                                    onClick={() => startQuiz('grammar')}
+                                    className="w-full bg-purple-600 text-white p-4 rounded-xl font-semibold hover:bg-purple-700 transition shadow-sm"
+                                >
+                                    Grammar ({grammarData.length} questions)
+                                </button>
+
+                                <hr className="my-6 border-slate-200" />
+                                
+                                <button 
                                     onClick={() => startQuiz('random20')}
+                                    className="w-full bg-blue-500 text-white p-4 rounded-xl font-semibold hover:bg-blue-600 transition shadow-sm"
+                                >
+                                    20 Random Questions (MCQ only)
+                                </button>
+                                <button 
+                                    onClick={() => startQuiz('grammarRandom20')}
+                                    className="w-full bg-purple-500 text-white p-4 rounded-xl font-semibold hover:bg-purple-600 transition shadow-sm"
+                                >
+                                    20 Random Questions (Grammar only)
+                                </button>
+                                <button 
+                                    onClick={() => startQuiz('ultimateRandom20')}
                                     className="w-full bg-emerald-600 text-white p-4 rounded-xl font-semibold hover:bg-emerald-700 transition shadow-sm"
                                 >
-                                    20 Random Questions
+                                    20 Mixed Random Questions (All Topics)
                                 </button>
+
                                 <hr className="my-6 border-slate-200" />
+                                
                                 <button 
                                     onClick={() => setViewMode('database')}
                                     className="w-full bg-white border-2 border-slate-300 text-slate-700 p-4 rounded-xl font-semibold hover:bg-slate-50 transition shadow-sm"
                                 >
-                                    View Question Database
+                                    View Databases
                                 </button>
                             </div>
                         </div>
@@ -153,17 +243,17 @@
             }
 
             if (viewMode === 'database') {
-                const dbData = databaseFilter === 'all' 
-                    ? [...abbreviationsData, ...theoryData]
-                    : databaseFilter === 'abbreviations' 
-                        ? abbreviationsData 
-                        : theoryData;
+                let dbData = [];
+                if (databaseFilter === 'all') dbData = [...abbreviationsData, ...theoryData];
+                if (databaseFilter === 'abbreviations') dbData = abbreviationsData;
+                if (databaseFilter === 'theory') dbData = theoryData;
+                if (databaseFilter === 'grammar') dbData = grammarData;
 
                 return (
                     <div className="min-h-screen p-4 md:p-8">
                         <div className="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-2xl shadow-xl">
                             <div className="flex justify-between items-center mb-8 border-b pb-4">
-                                <h2 className="text-2xl font-bold text-slate-800">Question Database</h2>
+                                <h2 className="text-2xl font-bold text-slate-800">Database</h2>
                                 <button 
                                     onClick={navigateToMenu}
                                     className="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg font-medium hover:bg-slate-200 transition"
@@ -172,21 +262,25 @@
                                 </button>
                             </div>
 
-                            <div className="flex gap-2 mb-6">
-                                <button onClick={() => setDatabaseFilter('all')} className={`px-4 py-2 rounded-lg font-medium ${databaseFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>All</button>
+                            <div className="flex flex-wrap gap-2 mb-6">
+                                <button onClick={() => setDatabaseFilter('all')} className={`px-4 py-2 rounded-lg font-medium ${databaseFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>All Multiple Choice</button>
                                 <button onClick={() => setDatabaseFilter('abbreviations')} className={`px-4 py-2 rounded-lg font-medium ${databaseFilter === 'abbreviations' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Abbreviations</button>
                                 <button onClick={() => setDatabaseFilter('theory')} className={`px-4 py-2 rounded-lg font-medium ${databaseFilter === 'theory' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Theory</button>
+                                <button onClick={() => setDatabaseFilter('grammar')} className={`px-4 py-2 rounded-lg font-medium ${databaseFilter === 'grammar' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Grammar</button>
                             </div>
 
                             <div className="space-y-4">
-                                {dbData.map((item, index) => (
-                                    <div key={index} className="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition">
-                                        <h3 className="font-semibold text-slate-800 mb-2">{item.q}</h3>
-                                        <p className="text-green-700 font-medium bg-green-50 inline-block px-3 py-1 rounded-md">
-                                            Answer: {item.answer}
-                                        </p>
-                                    </div>
-                                ))}
+                                {dbData.map((item, index) => {
+                                    const displayAnswer = Array.isArray(item.answer) ? item.answer.join(" OR ") : item.answer;
+                                    return (
+                                        <div key={index} className="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition">
+                                            <h3 className="font-semibold text-slate-800 mb-2">{item.q}</h3>
+                                            <p className="text-green-700 font-medium bg-green-50 inline-block px-3 py-1 rounded-md">
+                                                Answer: {displayAnswer}
+                                            </p>
+                                        </div>
+                                    )
+                                })}
                             </div>
                         </div>
                     </div>
@@ -252,7 +346,7 @@
                                 ← Back to Menu
                             </button>
                             <button 
-                                onClick={() => startQuiz(activeCategory)}
+                                onClick={() => startQuiz(rawCategory)}
                                 className="text-sm font-semibold text-slate-500 hover:text-blue-600 transition flex items-center gap-1"
                             >
                                 ↻ Restart Quiz
@@ -270,40 +364,89 @@
                         
                         <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-8 leading-tight">{q.q}</h2>
                         
-                        <div className="space-y-3 mb-8">
-                            {shuffledOptions.map((option, index) => {
-                                let styleClass = "bg-slate-50 border-slate-200 hover:border-blue-400 text-slate-700";
-                                
-                                if (isAnswered) {
-                                    if (option === q.answer) {
-                                        styleClass = "bg-green-50 border-green-500 text-green-800 font-medium";
-                                    } else if (option === selectedOption) {
-                                        styleClass = "bg-red-50 border-red-500 text-red-800 font-medium";
-                                    } else {
-                                        styleClass = "bg-slate-50 border-slate-100 opacity-50 text-slate-400";
+                        {q.options ? (
+                            <div className="space-y-3 mb-8">
+                                {shuffledOptions.map((option, index) => {
+                                    let styleClass = "bg-slate-50 border-slate-200 hover:border-blue-400 text-slate-700";
+                                    
+                                    if (isAnswered) {
+                                        if (option === q.answer) {
+                                            styleClass = "bg-green-50 border-green-500 text-green-800 font-medium";
+                                        } else if (option === selectedOption) {
+                                            styleClass = "bg-red-50 border-red-500 text-red-800 font-medium";
+                                        } else {
+                                            styleClass = "bg-slate-50 border-slate-100 opacity-50 text-slate-400";
+                                        }
                                     }
-                                }
 
-                                return (
-                                    <button
-                                        key={index}
-                                        onClick={() => handleOptionClick(option)}
+                                    return (
+                                        <button
+                                            key={index}
+                                            onClick={() => submitMultipleChoice(option)}
+                                            disabled={isAnswered}
+                                            className={`w-full p-4 md:p-5 text-left border-2 rounded-xl transition-all duration-200 flex justify-between items-center ${styleClass}`}
+                                        >
+                                            <span className="text-lg">{option}</span>
+                                            {isAnswered && option === q.answer && <span className="text-green-600 font-bold text-xl">✓</span>}
+                                            {isAnswered && option !== q.answer && option === selectedOption && <span className="text-red-500 font-bold text-xl">✕</span>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="mb-8">
+                                <div className="flex flex-col md:flex-row gap-4">
+                                    <input
+                                        ref={inputRef}
+                                        type="text"
+                                        value={textInput}
+                                        onChange={(e) => setTextInput(e.target.value)}
+                                        onKeyDown={handleKeyDown}
                                         disabled={isAnswered}
-                                        className={`w-full p-4 md:p-5 text-left border-2 rounded-xl transition-all duration-200 flex justify-between items-center ${styleClass}`}
-                                    >
-                                        <span className="text-lg">{option}</span>
-                                        {isAnswered && option === q.answer && <span className="text-green-600 font-bold text-xl">✓</span>}
-                                        {isAnswered && option !== q.answer && option === selectedOption && <span className="text-red-500 font-bold text-xl">✕</span>}
-                                    </button>
-                                );
-                            })}
-                        </div>
+                                        placeholder="Type your answer here..."
+                                        className={`flex-1 p-4 text-lg border-2 rounded-xl outline-none transition-all ${
+                                            isAnswered 
+                                                ? isCorrect(textInput, q.answer)
+                                                    ? "bg-green-50 border-green-500 text-green-800"
+                                                    : "bg-red-50 border-red-500 text-red-800"
+                                                : "bg-slate-50 border-slate-200 focus:border-blue-500"
+                                        }`}
+                                    />
+                                    {!isAnswered && (
+                                        <button 
+                                            onClick={submitTextInput}
+                                            disabled={!textInput.trim()}
+                                            className="bg-purple-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Submit
+                                        </button>
+                                    )}
+                                </div>
+
+                                {isAnswered && (
+                                    <div className={`mt-6 p-5 rounded-xl border ${isCorrect(textInput, q.answer) ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            {isCorrect(textInput, q.answer) ? (
+                                                <span className="text-green-600 font-bold text-xl">✓ Correct!</span>
+                                            ) : (
+                                                <span className="text-red-600 font-bold text-xl">✕ Incorrect</span>
+                                            )}
+                                        </div>
+                                        {!isCorrect(textInput, q.answer) && (
+                                            <p className="text-slate-700">
+                                                Accepted answers: <strong className="text-green-700">{Array.isArray(q.answer) ? q.answer.join(" OR ") : q.answer}</strong>
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div className="flex justify-end min-h-[48px]">
                             {isAnswered && (
                                 <button 
                                     onClick={nextQuestion}
-                                    className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md"
+                                    className="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-900 transition shadow-md"
                                 >
                                     {currentQuestionIndex === quizQuestions.length - 1 ? "Finish Quiz" : "Next Question"}
                                 </button>
