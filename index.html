@@ -101,6 +101,32 @@
                 setViewMode('quiz');
             };
 
+            const nextQuestion = () => {
+                const next = currentQuestionIndex + 1;
+                if (next < quizQuestions.length) {
+                    setCurrentQuestionIndex(next);
+                    setSelectedOption(null);
+                    setTextInput("");
+                    setIsAnswered(false);
+                } else {
+                    setShowResults(true);
+                }
+            };
+
+            useEffect(() => {
+                const handleGlobalKeyDown = (e) => {
+                    if (e.key === 'Enter') {
+                        if (viewMode === 'quiz' && isAnswered) {
+                            e.preventDefault();
+                            nextQuestion();
+                        }
+                    }
+                };
+
+                window.addEventListener('keydown', handleGlobalKeyDown);
+                return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+            }, [viewMode, isAnswered, currentQuestionIndex, quizQuestions]);
+
             useEffect(() => {
                 if (viewMode === 'quiz' && currentQuestionIndex < quizQuestions.length) {
                     const currentQ = quizQuestions[currentQuestionIndex];
@@ -143,26 +169,6 @@
                         selected: textInput,
                         correct: correctDisplay
                     }]);
-                }
-            };
-
-            const handleKeyDown = (e) => {
-                if (e.key === 'Enter' && textInput.trim() && !isAnswered) {
-                    submitTextInput();
-                } else if (e.key === 'Enter' && isAnswered) {
-                    nextQuestion();
-                }
-            };
-
-            const nextQuestion = () => {
-                const next = currentQuestionIndex + 1;
-                if (next < quizQuestions.length) {
-                    setCurrentQuestionIndex(next);
-                    setSelectedOption(null);
-                    setTextInput("");
-                    setIsAnswered(false);
-                } else {
-                    setShowResults(true);
                 }
             };
 
@@ -395,13 +401,26 @@
                             </div>
                         ) : (
                             <div className="mb-8">
-                                <div className="flex flex-col md:flex-row gap-4">
+                                <form 
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        if (!isAnswered && textInput.trim()) {
+                                            submitTextInput();
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            // Блокируем всплытие, чтобы глобальный слушатель не ловил Enter во время набора текста
+                                            e.stopPropagation();
+                                        }
+                                    }}
+                                    className="flex flex-col md:flex-row gap-4"
+                                >
                                     <input
                                         ref={inputRef}
                                         type="text"
                                         value={textInput}
                                         onChange={(e) => setTextInput(e.target.value)}
-                                        onKeyDown={handleKeyDown}
                                         disabled={isAnswered}
                                         placeholder="Type your answer here..."
                                         className={`flex-1 p-4 text-lg border-2 rounded-xl outline-none transition-all ${
@@ -414,14 +433,14 @@
                                     />
                                     {!isAnswered && (
                                         <button 
-                                            onClick={submitTextInput}
+                                            type="submit"
                                             disabled={!textInput.trim()}
                                             className="bg-purple-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             Submit
                                         </button>
                                     )}
-                                </div>
+                                </form>
 
                                 {isAnswered && (
                                     <div className={`mt-6 p-5 rounded-xl border ${isCorrect(textInput, q.answer) ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
@@ -448,7 +467,7 @@
                                     onClick={nextQuestion}
                                     className="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-900 transition shadow-md"
                                 >
-                                    {currentQuestionIndex === quizQuestions.length - 1 ? "Finish Quiz" : "Next Question"}
+                                    {currentQuestionIndex === quizQuestions.length - 1 ? "Finish Quiz (Enter)" : "Next Question (Enter)"}
                                 </button>
                             )}
                         </div>
