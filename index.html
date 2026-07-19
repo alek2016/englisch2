@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business English & Politics Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const abbreviationsData = [
+            { q: "What is the 'D' in Washington D.C.?", options: ["District", "Department", "Division"], answer: "District" },
+            { q: "The two main banking groups in the UK are Lloyds Banking Group and the ... Group.", options: ["RBS", "HSBC", "HBOS"], answer: "RBS" },
+            { q: "The law that opened up the banking system in the USA after 1999 and allowed banks to offer more diverse services was called the ...", options: ["GLB Act", "GSA Act", "DFA Act"], answer: "GLB Act" },
+            { q: "The ... is a market category of the LSE which lists small growing companies.", options: ["AIM", "ICE", "OTC"], answer: "AIM" },
+            { q: "What is the largest stock exchange in the USA?", options: ["NYSE", "NASDAQ", "AMEX"], answer: "NYSE" },
+            { q: "The ... is a network of American exchanges which started in 2000.", options: ["ISE", "ICE", "SEC"], answer: "ISE" },
+            { q: "Which American stock exchange mainly lists newer, technological firms?", options: ["NASDAQ", "NYSE", "LSE"], answer: "NASDAQ" },
+            { q: "In the context of insurance, OFC stands for ... Federal Charter.", options: ["Optional", "Official", "Organizational"], answer: "Optional" },
+            { q: "In economic terms, what does PPP stand for?", options: ["Purchasing Power Parity", "Private Property Protection", "Public Policy Proposal"], answer: "Purchasing Power Parity" },
+            { q: "What is the FTSE and what does it stand for?", options: ["Financial Times Stock Exchange", "Federal Trade Security Exchange", "Foreign Trade Standard Exchange"], answer: "Financial Times Stock Exchange" },
+            { q: "A business organisation whose shares can be sold to the general public is known as a ...", options: ["PLC (Public Limited Company)", "LLC (Limited Liability Company)", "LLP (Limited Liability Partnership)"], answer: "PLC (Public Limited Company)" },
+            { q: "The very first sale of a company's shares to the public is called an ...", options: ["IPO (Initial Public Offering)", "OTC (Over The Counter)", "M&A (Mergers and Acquisitions)"], answer: "IPO (Initial Public Offering)" },
+            { q: "Securities traded via a broker-dealer network rather than on a centralized exchange are referred to as ...", options: ["OTC (Over The Counter)", "IPO (Initial Public Offering)", "ICE (InterContinental Exchange)"], answer: "OTC (Over The Counter)" },
+            { q: "The London Stock Exchange Group is abbreviated as ...", options: ["LSEG", "LSEA", "LSEC"], answer: "LSEG" },
+            { q: "The electronic quotation system used by the London Stock Exchange is known as ...", options: ["SEAQ", "NASDAQ", "ICE"], answer: "SEAQ" },
+            { q: "An American Fortune 500 company that operates global exchanges and clearing houses is the ...", options: ["ICE (InterContinental Exchange)", "SEC (Securities Exchange Commission)", "FSA (Financial Services Authority)"], answer: "ICE (InterContinental Exchange)" },
+            { q: "The US federal agency responsible for enforcing federal securities laws is the ...", options: ["SEC (Securities Exchange Commission)", "FSA (Financial Services Authority)", "FSOC (Financial Stability Oversight Council)"], answer: "SEC (Securities Exchange Commission)" },
+            { q: "The former quasi-judicial body responsible for the regulation of the financial services industry in the UK was the ...", options: ["FSA (Financial Services Authority)", "SEC (Securities Exchange Commission)", "MPC (Monetary Policy Committee)"], answer: "FSA (Financial Services Authority)" },
+            { q: "A stock market index that measures the stock performance of 30 large companies listed on stock exchanges in the US is the ...", options: ["DJIA (Dow Jones Industrial Average)", "S&P (Standard and Poors)", "FTSE (Financial Times Stock Exchange)"], answer: "DJIA (Dow Jones Industrial Average)" },
+            { q: "A US stock market index based on the market capitalizations of 500 large companies is the ...", options: ["S&P (Standard and Poors)", "DJIA (Dow Jones Industrial Average)", "FTSE (Financial Times Stock Exchange)"], answer: "S&P (Standard and Poors)" },
+            { q: "An insurance policy that covers professionals for claims made against them for inadequate advice is known as ...", options: ["PI (Professional Indemnity)", "BOP (Business Owner Policy)", "OFC (Optional Federal Charter)"], answer: "PI (Professional Indemnity)" },
+            { q: "A package of insurance policies combined into a single contract for small and medium-sized businesses is a ...", options: ["BOP (Business Owner Policy)", "PI (Professional Indemnity)", "OFC (Optional Federal Charter)"], answer: "BOP (Business Owner Policy)" },
+            { q: "The committee at the Bank of England responsible for setting interest rates is the ...", options: ["MPC (Monetary Policy Committee)", "SEC (Securities Exchange Commission)", "FSA (Financial Services Authority)"], answer: "MPC (Monetary Policy Committee)" },
+            { q: "The US organization formed after the 2008 financial crisis to monitor systemic risk is the ...", options: ["FSOC (Financial Stability Oversight Council)", "SEC (Securities Exchange Commission)", "MPC (Monetary Policy Committee)"], answer: "FSOC (Financial Stability Oversight Council)" },
+            { q: "The consolidation of companies or assets through various types of financial transactions is called ...", options: ["M&A (Mergers and Acquisitions)", "IPO (Initial Public Offering)", "OTC (Over The Counter)"], answer: "M&A (Mergers and Acquisitions)" }
+        ];
+
+        const theoryData = [
+            { q: "Who was the first president of the USA?", options: ["George Washington", "Thomas Jefferson", "Abraham Lincoln"], answer: "George Washington" },
+            { q: "Who controls the debates in the British House of Commons?", options: ["The Speaker", "The Prime Minister", "The Lord Chancellor"], answer: "The Speaker" },
+            { q: "Which Secretary carries the highest ranking/status in the US Government?", options: ["The Secretary of State", "The Secretary of Defense", "The Secretary of the Treasury"], answer: "The Secretary of State" },
+            { q: "What is the approx. population of the USA?", options: ["330-340 million", "250-260 million", "400-410 million"], answer: "330-340 million" },
+            { q: "The USA is based on a ... system of rule whereby the power is shared between central government and states or local government.", options: ["Federal", "Unitary", "Confederal"], answer: "Federal" },
+            { q: "The United Kingdom is made up of England, Wales, Scotland and ...", options: ["Northern Ireland", "Republic of Ireland", "Isle of Man"], answer: "Northern Ireland" },
+            { q: "The two debating chambers involved in the British law-making process are the House of Commons and the ...", options: ["House of Lords", "Senate", "House of Representatives"], answer: "House of Lords" },
+            { q: "The most dominant sector of the UK economy is the ... sector.", options: ["Service", "Manufacturing", "Agricultural"], answer: "Service" },
+            { q: "The government has the ... function.", options: ["Executive", "Legislative", "Judicial"], answer: "Executive" },
+            { q: "The diverse mixture of peoples and cultures in the USA became known as the ...", options: ["Melting Pot", "Salad Bowl", "Cultural Mosaic"], answer: "Melting Pot" },
+            { q: "The Chancellor of the Exchequer is responsible for ... decisions.", options: ["Financial", "Foreign Policy", "Defense"], answer: "Financial" },
+            { q: "The ... is the US chamber with 100 members each elected for 6 years.", options: ["Senate", "House of Representatives", "Supreme Court"], answer: "Senate" },
+            { q: "In 1999 d... gave powers to the home nations.", options: ["Devolution", "Decentralization", "Deregulation"], answer: "Devolution" },
+            { q: "For how many years was the UK in the EU (EEC/EC)?", options: ["47 years", "35 years", "52 years"], answer: "47 years" },
+            { q: "Boris Johnson is the leader of which political party?", options: ["Conservative Party", "Labour Party", "Liberal Democrats"], answer: "Conservative Party" },
+            { q: "Before an Act of Parliament officially completes the law-making process, the Queen signs the legislation. This is known as Royal ...", options: ["Assent", "Decree", "Proclamation"], answer: "Assent" },
+            { q: "A geographical area represented by one Member of Parliament in the UK is called a ...", options: ["Constituency", "District", "County"], answer: "Constituency" },
+            { q: "1776 saw the ... of Independence in the USA.", options: ["Declaration", "Constitution", "Articles"], answer: "Declaration" },
+            { q: "... is the umbrella term for the two houses in US bicameral politics.", options: ["Congress", "Parliament", "Legislature"], answer: "Congress" },
+            { q: "The ... sector of the UK economy covers business organisations like sole traders, partnerships, private limited companies and public limited companies.", options: ["Private", "Public", "Voluntary"], answer: "Private" },
+            { q: "... banks are banks for businesses offering advice on e.g. mergers and acquisitions.", options: ["Corporate / merchant", "Retail / consumer", "Central / national"], answer: "Corporate / merchant" },
+            { q: "The central bank of the USA is called the ...", options: ["Federal Reserve", "Bank of America", "National Treasury"], answer: "Federal Reserve" },
+            { q: "Which organisation issues the currency in the USA?", options: ["Department of the Treasury", "Federal Reserve", "United States Mint"], answer: "Department of the Treasury" },
+            { q: "The Big ... refers to the restructuring of the London Stock Exchange and its general modernisation, so called because its computer system crashed on the day it reopened.", options: ["Bang", "Crash", "Boom"], answer: "Bang" },
+            { q: "What kind of shares are sold on the primary market of the LSE?", options: ["New shares (first-time sale)", "Resale shares (subsequent trading)", "Over-the-counter shares"], answer: "New shares (first-time sale)" },
+            { q: "In which year did the NYSE merge with Euronext?", options: ["2007", "1999", "2012"], answer: "2007" },
+            { q: "Lloyds of London is an insurance ...", options: ["market", "company", "syndicate"], answer: "market" },
+            { q: "‘Names’ at Lloyds of London can now be private and corporate. Their main function is to provide ...", options: ["capital", "management", "insurance policies"], answer: "capital" },
+            { q: "Corporate names have been allowed since Lloyds ... in 1996.", options: ["Renewal Plan", "Recovery Plan", "Reconstruction Plan"], answer: "Renewal Plan" },
+            { q: "What do you call a group of insurance specialists in the Room at Lloyds of London?", options: ["syndicate", "committee", "cartel"], answer: "syndicate" },
+            { q: "The first insurance policies compiled in the USA were for protection in the event of ...", options: ["fire", "flood", "theft"], answer: "fire" },
+            { q: "Which kind of agents only represent a single insurance company and only do business with that company?", options: ["captive", "independent", "broker"], answer: "captive" },
+            { q: "What is the English equivalent for 'BWL'?", options: ["Business Administration", "Economics", "Commerce"], answer: "Business Administration" },
+            { q: "What is the English equivalent for 'VWL'?", options: ["Economics", "Business Administration", "Political Science"], answer: "Economics" },
+            { q: "What are two English words for 'Kunde'?", options: ["customer and client", "buyer and shopper", "consumer and patron"], answer: "customer and client" },
+            { q: "What defines the public sector?", options: ["Organisations run and funded by the state", "Privately owned business organisations aiming to make a profit", "Charitable organizations funded by donations"], answer: "Organisations run and funded by the state" },
+            { q: "What defines the private sector?", options: ["Privately owned business organisations aiming to make a profit", "Organisations run and funded by the state", "Non-governmental organizations providing social services"], answer: "Privately owned business organisations aiming to make a profit" },
+            { q: "What are four English words for 'Angebot'?", options: ["offer, quotation, bid, tender", "demand, request, order, purchase", "invoice, receipt, bill, statement"], answer: "offer, quotation, bid, tender" },
+            { q: "What is the English word for 'Konkurrenzfähigkeit'?", options: ["competitiveness", "profitability", "sustainability"], answer: "competitiveness" },
+            { q: "What does the primary sector refer to?", options: ["Extractive industry (getting the raw material e.g. farming, mining)", "Manufacturing and processing (changing the raw material)", "Commerce (services and aids to trade)"], answer: "Extractive industry (getting the raw material e.g. farming, mining)" },
+            { q: "What does the secondary sector refer to?", options: ["Manufacturing and processing (changing the raw material e.g. purifying oil)", "Extractive industry (getting the raw material e.g. farming, mining)", "Commerce (services and aids to trade)"], answer: "Manufacturing and processing (changing the raw material e.g. purifying oil)" },
+            { q: "What does the tertiary sector refer to?", options: ["Commerce (services and aids to trade e.g. transport, retail)", "Extractive industry (getting the raw material e.g. farming, mining)", "Manufacturing and processing (changing the raw material)"], answer: "Commerce (services and aids to trade e.g. transport, retail)" },
+            { q: "What is the secondary market?", options: ["Refers to the resale of shares (subsequent trading)", "Refers to the sale of new shares (first-time sale)", "The market where larger companies trade securities"], answer: "Refers to the resale of shares (subsequent trading)" },
+            { q: "What is the name of the market where larger, more established companies trade their securities?", options: ["Main market", "Alternative Investment Market", "OTC market"], answer: "Main market" },
+            { q: "A fundamental economic concept that describes the relationship between availability and desire for a product is ... and demand.", options: ["supply", "cost", "price"], answer: "supply" },
+            { q: "Innovation in business is often driven by R&D, which stands for research and ...", options: ["development", "distribution", "design"], answer: "development" }
+        ];
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        const App = () => {
+            const [activeCategory, setActiveCategory] = useState(null);
+            const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [showResults, setShowResults] = useState(false);
+            const [selectedOption, setSelectedOption] = useState(null);
+            const [isAnswered, setIsAnswered] = useState(false);
+            const [shuffledOptions, setShuffledOptions] = useState([]);
+
+            const currentData = activeCategory === 'abbreviations' ? abbreviationsData : theoryData;
+
+            useEffect(() => {
+                if (activeCategory && currentQuestionIndex < currentData.length) {
+                    setShuffledOptions(shuffleArray(currentData[currentQuestionIndex].options));
+                }
+            }, [activeCategory, currentQuestionIndex]);
+
+            const handleOptionClick = (option) => {
+                if (isAnswered) return;
+                setSelectedOption(option);
+                setIsAnswered(true);
+                if (option === currentData[currentQuestionIndex].answer) {
+                    setScore(score + 1);
+                }
+            };
+
+            const nextQuestion = () => {
+                const next = currentQuestionIndex + 1;
+                if (next < currentData.length) {
+                    setCurrentQuestionIndex(next);
+                    setSelectedOption(null);
+                    setIsAnswered(false);
+                } else {
+                    setShowResults(true);
+                }
+            };
+
+            const restartQuiz = () => {
+                setActiveCategory(null);
+                setCurrentQuestionIndex(0);
+                setScore(0);
+                setShowResults(false);
+                setSelectedOption(null);
+                setIsAnswered(false);
+            };
+
+            if (!activeCategory) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4">
+                        <div className="bg-white p-8 md:p-12 rounded-2xl shadow-xl max-w-lg w-full text-center">
+                            <h1 className="text-3xl font-bold text-slate-800 mb-2">Business & Politics Quiz</h1>
+                            <p className="text-slate-500 mb-8">Select a category to begin testing your knowledge.</p>
+                            
+                            <div className="space-y-4">
+                                <button 
+                                    onClick={() => setActiveCategory('abbreviations')}
+                                    className="w-full bg-blue-600 text-white p-4 rounded-xl font-semibold hover:bg-blue-700 transition shadow-sm"
+                                >
+                                    Abbreviations ({abbreviationsData.length} questions)
+                                </button>
+                                <button 
+                                    onClick={() => setActiveCategory('theory')}
+                                    className="w-full bg-slate-800 text-white p-4 rounded-xl font-semibold hover:bg-slate-900 transition shadow-sm"
+                                >
+                                    Theory & General Knowledge ({theoryData.length} questions)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (showResults) {
+                const percentage = Math.round((score / currentData.length) * 100);
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4">
+                        <div className="bg-white p-8 md:p-12 rounded-2xl shadow-xl max-w-md w-full text-center">
+                            <h2 className="text-3xl font-bold mb-4 text-slate-800">Quiz Completed!</h2>
+                            <p className="text-xl mb-6 text-slate-600">Category: <span className="font-semibold capitalize">{activeCategory}</span></p>
+                            
+                            <div className="text-5xl font-bold text-blue-600 mb-6">{percentage}%</div>
+                            <p className="text-lg mb-8">You scored <span className="font-bold">{score}</span> out of {currentData.length}.</p>
+                            
+                            <button 
+                                onClick={restartQuiz}
+                                className="w-full bg-slate-800 text-white px-8 py-4 rounded-xl font-semibold hover:bg-slate-900 transition"
+                            >
+                                Return to Menu
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            const q = currentData[currentQuestionIndex];
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <div className="bg-white p-6 md:p-10 rounded-2xl shadow-xl max-w-3xl w-full">
+                        <div className="flex justify-between items-center mb-8 border-b pb-4">
+                            <span className="text-sm font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-3 py-1 rounded-full">
+                                {activeCategory}
+                            </span>
+                            <span className="text-sm font-semibold text-slate-400">
+                                Question {currentQuestionIndex + 1} of {currentData.length}
+                            </span>
+                        </div>
+                        
+                        <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-8 leading-tight">{q.q}</h2>
+                        
+                        <div className="space-y-3 mb-8">
+                            {shuffledOptions.map((option, index) => {
+                                let styleClass = "bg-slate-50 border-slate-200 hover:border-blue-400 text-slate-700";
+                                
+                                if (isAnswered) {
+                                    if (option === q.answer) {
+                                        styleClass = "bg-green-50 border-green-500 text-green-800 font-medium";
+                                    } else if (option === selectedOption) {
+                                        styleClass = "bg-red-50 border-red-500 text-red-800 font-medium";
+                                    } else {
+                                        styleClass = "bg-slate-50 border-slate-100 opacity-50 text-slate-400";
+                                    }
+                                }
+
+                                return (
+                                    <button
+                                        key={index}
+                                        onClick={() => handleOptionClick(option)}
+                                        disabled={isAnswered}
+                                        className={`w-full p-4 md:p-5 text-left border-2 rounded-xl transition-all duration-200 flex justify-between items-center ${styleClass}`}
+                                    >
+                                        <span className="text-lg">{option}</span>
+                                        {isAnswered && option === q.answer && <span className="text-green-600 font-bold text-xl">✓</span>}
+                                        {isAnswered && option !== q.answer && option === selectedOption && <span className="text-red-500 font-bold text-xl">✕</span>}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div className="flex justify-end min-h-[48px]">
+                            {isAnswered && (
+                                <button 
+                                    onClick={nextQuestion}
+                                    className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md"
+                                >
+                                    {currentQuestionIndex === currentData.length - 1 ? "Finish Quiz" : "Next Question"}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
